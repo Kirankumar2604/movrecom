@@ -49,13 +49,33 @@
 #
 #     # for i in recommendations:
 #     #     st.write(i)
+import os
+from pathlib import Path
 import streamlit as st
 import pickle
 import pandas as pd
 import requests
 
-# TMDB API Key
-API_KEY = "97ed5942b0492669a30bc5075f0e7f"
+
+def load_local_env(env_path: str = ".env") -> None:
+    env_file = Path(env_path)
+
+    if not env_file.exists():
+        return
+
+    for raw_line in env_file.read_text().splitlines():
+        line = raw_line.strip()
+
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_local_env()
+
+API_KEY = os.getenv("TMDB_API_KEY")
 
 
 def fetch_poster(movie_id):
@@ -63,7 +83,10 @@ def fetch_poster(movie_id):
     Fetch movie poster from TMDB API.
     """
     try:
-        url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key=97ed594278b0492669a30bc5075f0e7f&language=en-US"
+        if not API_KEY:
+            return "https://via.placeholder.com/500x750?text=Missing+API+Key"
+
+        url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={API_KEY}&language=en-US"
         response = requests.get(url)
         data = response.json()
 

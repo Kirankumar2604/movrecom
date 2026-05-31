@@ -1,7 +1,28 @@
+import os
+from pathlib import Path
 import streamlit as st
 import pickle
 import pandas as pd
 import requests
+
+
+def load_local_env(env_path: str = ".env") -> None:
+    env_file = Path(env_path)
+
+    if not env_file.exists():
+        return
+
+    for raw_line in env_file.read_text().splitlines():
+        line = raw_line.strip()
+
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_local_env()
 
 st.set_page_config(
     page_title="Netflix Clone",
@@ -66,9 +87,15 @@ h1,h2,h3,p {
 # --------------------------
 # TMDB POSTER
 # --------------------------
+API_KEY = os.getenv("TMDB_API_KEY")
+
+
 def fetch_poster(movie_id):
     try:
-        url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key=97ed594278b0492669a30bc5075f0e7f"
+        if not API_KEY:
+            return "https://via.placeholder.com/500x750?text=Missing+API+Key"
+
+        url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={API_KEY}"
         data = requests.get(url).json()
 
         poster_path = data.get("poster_path")
